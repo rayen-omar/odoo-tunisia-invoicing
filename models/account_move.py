@@ -41,16 +41,14 @@ class AccountMove(models.Model):
                 base_ht = self._get_base_ht()
                 fodec_amount = base_ht * 0.01
 
-                # We append a new line
-                new_line_vals = {
+                # We append a new line using environment to trigger computes (like account_id)
+                new_line = self.env['account.move.line'].new({
+                    'move_id': self.id,
                     'product_id': fodec_product.id,
-                    'name': fodec_product.name,
                     'quantity': 1,
                     'price_unit': fodec_amount,
-                    # Usually, tax is taken from product, but we might want to ensure 19% VAT is applied.
-                    # We will rely on standard Odoo product tax configuration.
-                }
-                self.invoice_line_ids = [(0, 0, new_line_vals)]
+                })
+                self.invoice_line_ids += new_line
         else:
             # Remove FODEC lines
             fodec_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == fodec_product)
@@ -67,13 +65,13 @@ class AccountMove(models.Model):
             # Check if Timbre line already exists
             existing_line = self.invoice_line_ids.filtered(lambda l: l.product_id == timbre_product)
             if not existing_line:
-                new_line_vals = {
+                new_line = self.env['account.move.line'].new({
+                    'move_id': self.id,
                     'product_id': timbre_product.id,
-                    'name': timbre_product.name,
                     'quantity': 1,
                     'price_unit': 1.0,
-                }
-                self.invoice_line_ids = [(0, 0, new_line_vals)]
+                })
+                self.invoice_line_ids += new_line
         else:
             # Remove Timbre lines
             timbre_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == timbre_product)
