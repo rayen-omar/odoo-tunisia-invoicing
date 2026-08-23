@@ -1,4 +1,4 @@
-from odoo import models, fields, api, _
+from odoo import models, fields, api, Command, _
 
 class AccountMove(models.Model):
     _inherit = 'account.move'
@@ -34,26 +34,20 @@ class AccountMove(models.Model):
         if not fodec_product:
             return
 
+        fodec_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == fodec_product)
         if self.is_fodec:
-            # Check if FODEC line already exists
-            existing_line = self.invoice_line_ids.filtered(lambda l: l.product_id == fodec_product)
-            if not existing_line:
+            if not fodec_lines:
                 base_ht = self._get_base_ht()
                 fodec_amount = base_ht * 0.01
 
-                # We append a new line using environment to trigger computes (like account_id)
-                new_line = self.env['account.move.line'].new({
-                    'move_id': self.id,
+                self.update({'invoice_line_ids': [Command.create({
                     'product_id': fodec_product.id,
                     'quantity': 1,
                     'price_unit': fodec_amount,
-                })
-                self.invoice_line_ids += new_line
+                })]})
         else:
-            # Remove FODEC lines
-            fodec_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == fodec_product)
             if fodec_lines:
-                self.invoice_line_ids = [(3, line.id, 0) if line.id else (2, line.id, 0) for line in fodec_lines]
+                self.invoice_line_ids -= fodec_lines
 
     @api.onchange('is_timbre')
     def _onchange_is_timbre(self):
@@ -61,22 +55,17 @@ class AccountMove(models.Model):
         if not timbre_product:
             return
 
+        timbre_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == timbre_product)
         if self.is_timbre:
-            # Check if Timbre line already exists
-            existing_line = self.invoice_line_ids.filtered(lambda l: l.product_id == timbre_product)
-            if not existing_line:
-                new_line = self.env['account.move.line'].new({
-                    'move_id': self.id,
+            if not timbre_lines:
+                self.update({'invoice_line_ids': [Command.create({
                     'product_id': timbre_product.id,
                     'quantity': 1,
                     'price_unit': 1.0,
-                })
-                self.invoice_line_ids += new_line
+                })]})
         else:
-            # Remove Timbre lines
-            timbre_lines = self.invoice_line_ids.filtered(lambda l: l.product_id == timbre_product)
             if timbre_lines:
-                self.invoice_line_ids = [(3, line.id, 0) if line.id else (2, line.id, 0) for line in timbre_lines]
+                self.invoice_line_ids -= timbre_lines
 
     @api.onchange('invoice_line_ids')
     def _onchange_lines_recalcul_fodec(self):

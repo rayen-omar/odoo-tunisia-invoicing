@@ -8,9 +8,11 @@
             <xpath expr="//group[@id='header_right_group']" position="inside">
                 <field name="is_fodec" 
                        invisible="move_type not in ('out_invoice', 'out_refund')"
+                       readonly="state != 'draft'"
                        widget="boolean_toggle"/>
                 <field name="is_timbre" 
                        invisible="move_type not in ('out_invoice', 'out_refund')"
+                       readonly="state != 'draft'"
                        widget="boolean_toggle"/>
             </xpath>
         </field>
