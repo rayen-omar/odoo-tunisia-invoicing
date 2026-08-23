@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Product: FODEC -->
+        <record id="product_fodec" model="product.product">
+            <field name="name">FODEC 1%</field>
+            <field name="type">service</field>
+            <field name="list_price">0.0</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="False"/>
+            <field name="invoice_policy">order</field>
+            <!-- Taxes will be set manually or via tax mapping if needed -->
+            <field name="taxes_id" eval="[(5, 0, 0)]"/>
+            <field name="supplier_taxes_id" eval="[(5, 0, 0)]"/>
+            <field name="description_sale">Taxe parafiscale 1%</field>
+        </record>
+
+        <!-- Product: Timbre Fiscal -->
+        <record id="product_timbre_fiscal" model="product.product">
+            <field name="name">Timbre Fiscal</field>
+            <field name="type">service</field>
+            <field name="list_price">1.00</field>
+            <field name="sale_ok" eval="False"/>
+            <field name="purchase_ok" eval="False"/>
+            <field name="invoice_policy">order</field>
+            <!-- Timbre is not subject to VAT -->
+            <field name="taxes_id" eval="[(5, 0, 0)]"/>
+            <field name="supplier_taxes_id" eval="[(5, 0, 0)]"/>
+            <field name="description_sale">Droit de timbre fiscal</field>
+        </record>
+    </data>
+</odoo>

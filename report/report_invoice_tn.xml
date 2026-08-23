@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_invoice_document_inherit_tn" inherit_id="account.report_invoice_document">
+        
+        <!-- Filter out FODEC and Timbre lines from the main lines table -->
+        <xpath expr="//table[@name='invoice_line_table']" position="before">
+            <t t-set="fodec_prod" t-value="env.ref('l10n_tn_invoice.product_fodec', raise_if_not_found=False)"/>
+            <t t-set="timbre_prod" t-value="env.ref('l10n_tn_invoice.product_timbre_fiscal', raise_if_not_found=False)"/>
+            <t t-set="lines" t-value="lines.filtered(lambda l: l.product_id != fodec_prod and l.product_id != timbre_prod)"/>
+        </xpath>
+
+        <!-- Replace standard tax_totals to show TN specific order: HT -> FODEC -> TVA -> Timbre -> Net a payer -->
+        <xpath expr="//div[@id='total']" position="replace">
+            <div id="total" class="row justify-content-end">
+                <div class="col-4">
+                    <table class="table table-sm table-borderless" style="page-break-inside: avoid;">
+                        <t t-set="fodec_lines" t-value="o.invoice_line_ids.filtered(lambda l: l.product_id == fodec_prod)"/>
+                        <t t-set="timbre_lines" t-value="o.invoice_line_ids.filtered(lambda l: l.product_id == timbre_prod)"/>
+                        <t t-set="real_ht" t-value="sum((o.invoice_line_ids - fodec_lines - timbre_lines).mapped('price_subtotal'))"/>
+                        
+                        <!-- HT -->
+                        <tr class="border-black o_subtotal">
+                            <td><strong>Total HT</strong></td>
+                            <td class="text-end">
+                                <span t-esc="real_ht" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </td>
+                        </tr>
+
+                        <!-- FODEC -->
+                        <tr t-if="fodec_lines">
+                            <td><strong>FODEC (1%)</strong></td>
+                            <td class="text-end">
+                                <span t-esc="sum(fodec_lines.mapped('price_subtotal'))" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </td>
+                        </tr>
+
+                        <!-- Standard Taxes -->
+                        <t t-foreach="o.tax_totals.get('subtotals', [])" t-as="subtotal">
+                            <t t-foreach="subtotal.get('tax_groups', [])" t-as="tax_group">
+                                <tr>
+                                    <td><span t-esc="tax_group['group_name']"/></td>
+                                    <td class="text-end">
+                                        <span t-esc="tax_group['tax_amount_currency']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </t>
+
+                        <!-- TIMBRE -->
+                        <tr t-if="timbre_lines">
+                            <td><strong>Timbre Fiscal</strong></td>
+                            <td class="text-end">
+                                <span t-esc="sum(timbre_lines.mapped('price_subtotal'))" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </td>
+                        </tr>
+
+                        <!-- NET A PAYER -->
+                        <tr class="border-black o_total">
+                            <td><strong>Net à Payer</strong></td>
+                            <td class="text-end">
+                                <strong><span t-esc="o.amount_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
